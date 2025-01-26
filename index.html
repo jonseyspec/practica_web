@@ -3,207 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Práctica de Matemáticas</title>
+    <title>Quiz Matemáticas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-color: #f0f8ff;
-        }
-        .container {
-            max-width: 600px;
-            margin: auto;
             padding: 20px;
         }
-        .card {
-            background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            padding: 20px;
+        input[type="number"] {
+            width: 100px;
+            padding: 5px;
+            font-size: 16px;
         }
-        input {
-            font-size: 1.2rem;
-            padding: 10px;
-            margin-top: 10px;
-            width: 100%;
-            text-align: center;
-        }
-        .stats {
+        #score, #time-score, #aciertos-total {
             margin-top: 20px;
+            font-size: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="card">
-            <h1>Práctica de Matemáticas</h1>
-            <div id="problem">...</div>
-            <input id="answer" type="number" placeholder="Tu respuesta" onkeypress="checkEnter(event)" />
-            <div class="stats">
-                <p id="score">Aciertos: 0 | Fallos: 0</p>
-                <p id="time-score">Nota de tiempo: 0</p>
-                <p id="aciertos-total">Nota de aciertos: 0/0</p>
-            </div>
-        </div>
-    </div>
 
-    <script>
-        let currentResult = Math.floor(Math.random() * 20) - 10; // Número inicial entre -10 y 10
-        let correctAnswers = 0;
-        let wrongAnswers = 0;
-        let timeScores = 0;
-        let startTime = Date.now();
-        let expectedResult = currentResult; // Resultado esperado inicial
-        let maxValue = 0; // Número máximo de trabajo
-        let numOperations = 0; // Número de operaciones a realizar
-        let currentOperation = 0; // Operación actual
+<h1>Quiz Matemáticas</h1>
 
-        // Pregunta por el número máximo de trabajo
-        function askMaxValue() {
-            const userMaxValue = prompt("Introduce el número máximo en valor absoluto para las operaciones:");
-            if (userMaxValue && !isNaN(userMaxValue) && userMaxValue > 0) {
-                maxValue = parseInt(userMaxValue);
-                askNumOperations(); // Pregunta por el número de operaciones
-            } else {
-                alert("Por favor, ingresa un número válido.");
-                askMaxValue();  // Vuelve a preguntar si no es válido
-            }
-        }
+<p>Ingrese el número de operaciones a realizar y el valor máximo en valor absoluto.</p>
 
-        // Pregunta por el número de operaciones
-        function askNumOperations() {
-            const userNumOperations = prompt("¿Cuántas operaciones quieres hacer?");
-            if (userNumOperations && !isNaN(userNumOperations) && userNumOperations > 0) {
-                numOperations = parseInt(userNumOperations);
-                generateProblem();  // Genera el primer problema
-            } else {
-                alert("Por favor, ingresa un número válido.");
-                askNumOperations();  // Vuelve a preguntar si no es válido
-            }
-        }
+<div>
+    <label for="max-number">Número máximo (valor absoluto):</label>
+    <input type="number" id="max-number" min="1">
+</div>
+<div>
+    <label for="num-operations">Número de operaciones:</label>
+    <input type="number" id="num-operations" min="1">
+</div>
+<button id="start-btn">Iniciar</button>
 
-        // Genera un nuevo problema matemático
-        function generateProblem() {
-            if (currentOperation >= numOperations) {
-                // Si ya se han realizado todas las operaciones, muestra la nota final
-                showFinalScore();
-                return;
-            }
+<div id="operation-container" style="margin-top: 20px;">
+    <p id="operation"></p>
+    <input type="number" id="answer" placeholder="Respuesta">
+</div>
 
-            const operations = ['+', '-', '*', '/'];
-            let operation = operations[Math.floor(Math.random() * operations.length)];
-            let operand;
+<p id="score">Aciertos: 0 | Fallos: 0</p>
+<p id="time-score">Nota de tiempo: 0.00</p>
+<p id="aciertos-total">Nota de aciertos: 0.00</p>
 
-            // Verificar si la operación es una división válida
-            if (operation === '/') {
-                if (isPrime(expectedResult) || expectedResult === 0) {
-                    // Si el número es primo o 0, cambiar la operación
-                    operation = operations[Math.floor(Math.random() * 3)];
-                } else {
-                    const divisors = getDivisors(expectedResult);
-                    operand = divisors[Math.floor(Math.random() * divisors.length)];
+<script>
+    let correctAnswers = 0;
+    let wrongAnswers = 0;
+    let currentOperation = 0;
+    let startTime;
+    let timeScores = 0;
+    let totalOperations;
+    let correctResult;
+
+    function generateProblem() {
+        const maxNum = parseInt(document.getElementById("max-number").value);
+        
+        // Asegurar que los números estén dentro del rango [-maxNum, maxNum]
+        const num1 = Math.floor(Math.random() * (maxNum * 2 + 1)) - maxNum;
+        const num2 = Math.floor(Math.random() * (maxNum * 2 + 1)) - maxNum;
+
+        const operation = Math.floor(Math.random() * 4);
+
+        let problem;
+
+        switch (operation) {
+            case 0: // Suma
+                problem = `${num1} + ${num2}`;
+                correctResult = num1 + num2;
+                break;
+            case 1: // Resta
+                problem = `${num1} - ${num2}`;
+                correctResult = num1 - num2;
+                break;
+            case 2: // Multiplicación
+                problem = `${num1} * ${num2}`;
+                correctResult = num1 * num2;
+                break;
+            case 3: // División (solo si el divisor es un factor del dividendo)
+                if (num2 === 0 || num1 % num2 !== 0) {
+                    num2 = 1; // Evitar división por 0 y asegurar que la división es exacta
                 }
-            }
-
-            // Generar operandos para otras operaciones
-            if (operation !== '/') {
-                operand = Math.floor(Math.random() * (maxValue * 2 + 1)) - maxValue; // Números entre -maxValue y maxValue
-            }
-
-            const problemText = `${expectedResult} ${operation} ${operand}`;
-            document.getElementById("problem").innerText = problemText;
-
-            // Calcular el nuevo resultado esperado
-            let tempResult;
-            switch (operation) {
-                case '+': tempResult = expectedResult + operand; break;
-                case '-': tempResult = expectedResult - operand; break;
-                case '*': tempResult = expectedResult * operand; break;
-                case '/': tempResult = expectedResult / operand; break;
-            }
-
-            // Asegurar que el resultado no exceda el máximo en valor absoluto
-            if (Math.abs(tempResult) > maxValue || isNaN(tempResult) || !Number.isInteger(tempResult)) {
-                // Si el resultado excede el máximo o no es un número entero, volver a generar el problema
-                generateProblem();
-                return;
-            }
-
-            expectedResult = tempResult; // Asignar el resultado calculado como esperado para la siguiente operación
-
-            startTime = Date.now(); // Iniciar el temporizador para la nueva operación
+                problem = `${num1} / ${num2}`;
+                correctResult = num1 / num2;
+                break;
         }
 
-        // Verifica si un número es primo
-        function isPrime(num) {
-            if (num <= 1) return false;
-            for (let i = 2; i <= Math.sqrt(Math.abs(num)); i++) {
-                if (num % i === 0) return false;
-            }
-            return true;
+        document.getElementById("operation").innerText = problem;
+        document.getElementById("answer").value = ''; // Limpiar el campo de respuesta
+    }
+
+    function startQuiz() {
+        const numOperations = parseInt(document.getElementById("num-operations").value);
+        const maxNumber = parseInt(document.getElementById("max-number").value);
+
+        // Validación de entradas
+        if (numOperations <= 0 || maxNumber <= 0) {
+            alert("Por favor, ingrese un número válido para operaciones y el número máximo.");
+            return;
         }
 
-        // Obtiene los divisores válidos de un número
-        function getDivisors(num) {
-            const divisors = [];
-            for (let i = 1; i <= Math.abs(num); i++) {
-                if (num % i === 0) {
-                    divisors.push(i);
-                    divisors.push(-i); // Incluir divisores negativos
-                }
-            }
-            return divisors;
+        totalOperations = numOperations;
+        currentOperation = 0;
+        correctAnswers = 0;
+        wrongAnswers = 0;
+        timeScores = 0;
+
+        // Actualizar estadísticas iniciales
+        document.getElementById("score").innerText = `Aciertos: ${correctAnswers} | Fallos: ${wrongAnswers}`;
+        document.getElementById("time-score").innerText = `Nota de tiempo: ${timeScores.toFixed(2)}`;
+        document.getElementById("aciertos-total").innerText = `Nota de aciertos: ${(correctAnswers / totalOperations * 10).toFixed(2)}`;
+
+        // Iniciar la primera operación
+        generateProblem();
+        startTime = Date.now();
+    }
+
+	function submitAnswer() {
+		const userAnswer = parseInt(document.getElementById("answer").value);
+		const elapsedTime = (Date.now() - startTime) / 1000;
+
+		if (userAnswer === correctResult) {
+			correctAnswers++;
+		} else {
+			wrongAnswers++;
+		}
+
+		// Calcular nota de tiempo individual y sumarla
+		const timeScore = elapsedTime <= 20 ? 1 - (elapsedTime / 20) : 0;
+		timeScores += timeScore;
+
+		currentOperation++;
+		document.getElementById("score").innerText = `Aciertos: ${correctAnswers} | Fallos: ${wrongAnswers}`;
+		document.getElementById("time-score").innerText = `Nota de tiempo acumulada: ${timeScores.toFixed(2)}`;
+		document.getElementById("aciertos-total").innerText = `Nota de aciertos: ${(correctAnswers / currentOperation * 10).toFixed(2)}`;
+
+		document.getElementById("answer").value = '';
+
+		if (currentOperation >= totalOperations) {
+			// Nota final calculada correctamente sobre 10
+			const finalTimeScore = (timeScores / totalOperations) * 10;
+			const finalAccuracyScore = (correctAnswers / totalOperations) * 10;
+
+			alert(`¡Quiz terminado! 
+			Aciertos: ${correctAnswers} 
+			Fallos: ${wrongAnswers} 
+			Nota de tiempo: ${finalTimeScore.toFixed(2)} 
+			Nota de aciertos: ${finalAccuracyScore.toFixed(2)}`);
+		} else {
+			generateProblem();
+			startTime = Date.now();
+		}
+	}
+    // Evento para enviar respuesta al presionar Enter
+    document.getElementById("answer").addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+            submitAnswer();
         }
+    });
 
-        // Verifica la respuesta del usuario
-        function submitAnswer() {
-            const userAnswer = parseInt(document.getElementById("answer").value);
-            const elapsedTime = (Date.now() - startTime) / 1000;
+    // Iniciar el quiz cuando se presiona el botón
+    document.getElementById("start-btn").addEventListener("click", startQuiz);
+</script>
 
-            // Validar respuesta
-            if (userAnswer === expectedResult) {
-                correctAnswers++;
-            } else {
-                wrongAnswers++;
-            }
-
-            // Calcular nota por tiempo (sobre 20)
-            const timeScore = elapsedTime > 20 ? 0 : 1 - (elapsedTime / 20);
-            timeScores += timeScore;
-
-            // Actualizar estadísticas
-            currentOperation++;
-            document.getElementById("score").innerText = `Aciertos: ${correctAnswers} | Fallos: ${wrongAnswers}`;
-            document.getElementById("time-score").innerText = `Nota de tiempo: ${timeScores.toFixed(2)}`;
-            document.getElementById("aciertos-total").innerText = `Nota de aciertos: ${(correctAnswers / currentOperation * 10).toFixed(2)}`;
-
-            // Limpiar entrada y generar un nuevo problema
-            document.getElementById("answer").value = '';
-            generateProblem();
-            focusInput();
-        }
-
-        // Muestra la nota final al completar todas las operaciones
-        function showFinalScore() {
-            const accuracyScore = (correctAnswers / numOperations) * 10;
-            alert(`Operaciones terminadas! \nNota de aciertos: ${accuracyScore.toFixed(2)} \nNota de tiempo: ${timeScores.toFixed(2)}`);
-        }
-
-        // Detecta si se presionó la tecla Enter
-        function checkEnter(event) {
-            if (event.key === "Enter") {
-                submitAnswer();
-            }
-        }
-
-        // Asegura que el cuadro de entrada siempre esté enfocado
-        function focusInput() {
-            document.getElementById("answer").focus();
-        }
-
-        // Inicializa la app preguntando el máximo valor
-        askMaxValue();
-        focusInput();
-    </script>
 </body>
 </html>
